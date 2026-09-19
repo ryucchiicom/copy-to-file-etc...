@@ -3,34 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>テキストファイル全文コピー</title>
+  <title>TXT/HTML コピー</title>
+
   <style>
+    :root {
+      color-scheme: light dark;
+    }
+
     body {
-      font-family: sans-serif;
-      margin: 20px;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: Canvas;
+      color: CanvasText;
     }
 
-    #output {
-      width: 100%;
-      min-height: 300px;
-      box-sizing: border-box;
-      margin-top: 15px;
-      padding: 10px;
-      white-space: pre-wrap;
-      overflow-wrap: break-word;
-      font-family: monospace;
-    }
-
-    button {
-      margin-top: 10px;
-      padding: 10px 16px;
+    #uploadButton {
+      padding: 10px 18px;
+      border: 1px solid GrayText;
+      border-radius: 10px;
+      background: Canvas;
+      color: CanvasText;
+      font-size: 15px;
       cursor: pointer;
+    }
+
+    #uploadButton:active {
+      opacity: 0.6;
+    }
+
+    #fileInput {
+      display: none;
     }
   </style>
 </head>
-<body>
 
-  <h1>テキストファイル全文コピー</h1>
+<body>
 
   <input
     type="file"
@@ -38,64 +49,66 @@
     accept=".txt,.html,.htm,.css,.js,.json,.xml,.csv,.md,.log,text/plain,text/html"
   >
 
-  <br>
-
-  <button id="copyButton">全文をコピー</button>
-
-  <textarea id="output" readonly placeholder="ここにファイルの全文が表示されます"></textarea>
+  <button id="uploadButton">再アップロード</button>
 
   <script>
     const fileInput = document.getElementById("fileInput");
-    const output = document.getElementById("output");
-    const copyButton = document.getElementById("copyButton");
+    const uploadButton = document.getElementById("uploadButton");
+
+    window.addEventListener("load", () => {
+      fileInput.click();
+    });
+
+    uploadButton.addEventListener("click", () => {
+      fileInput.click();
+    });
 
     fileInput.addEventListener("change", () => {
       const file = fileInput.files[0];
 
       if (!file) {
-        output.value = "";
         return;
       }
 
       const reader = new FileReader();
 
-      reader.onload = () => {
-        output.value = reader.result;
-      };
+      reader.onload = async () => {
+        const text = reader.result;
 
-      reader.onerror = () => {
-        output.value = "ファイルを読み込めませんでした。";
+        try {
+          await navigator.clipboard.writeText(text);
+          uploadButton.textContent = "コピーしました！";
+
+          setTimeout(() => {
+            uploadButton.textContent = "再アップロード";
+          }, 1500);
+        } catch (error) {
+          const textarea = document.createElement("textarea");
+
+          textarea.value = text;
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+
+          document.body.appendChild(textarea);
+          textarea.focus();
+          textarea.select();
+
+          try {
+            document.execCommand("copy");
+          } catch (e) {
+          }
+
+          textarea.remove();
+
+          uploadButton.textContent = "コピーしました！";
+
+          setTimeout(() => {
+            uploadButton.textContent = "再アップロード";
+          }, 1500);
+        }
       };
 
       reader.readAsText(file);
-    });
-
-    copyButton.addEventListener("click", async () => {
-      const text = output.value;
-
-      if (!text) {
-        return;
-      }
-
-      try {
-        await navigator.clipboard.writeText(text);
-        copyButton.textContent = "コピーしました！";
-
-        setTimeout(() => {
-          copyButton.textContent = "全文をコピー";
-        }, 1500);
-      } catch (error) {
-        output.focus();
-        output.select();
-        document.execCommand("copy");
-        window.getSelection().removeAllRanges();
-
-        copyButton.textContent = "コピーしました！";
-
-        setTimeout(() => {
-          copyButton.textContent = "全文をコピー";
-        }, 1500);
-      }
     });
   </script>
 
