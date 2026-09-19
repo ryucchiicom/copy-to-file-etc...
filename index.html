@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>テキストファイル全文コピー</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+    }
+
+    #output {
+      width: 100%;
+      min-height: 300px;
+      box-sizing: border-box;
+      margin-top: 15px;
+      padding: 10px;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      font-family: monospace;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 10px 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>テキストファイル全文コピー</h1>
+
+  <input
+    type="file"
+    id="fileInput"
+    accept=".txt,.html,.htm,.css,.js,.json,.xml,.csv,.md,.log,text/plain,text/html"
+  >
+
+  <br>
+
+  <button id="copyButton">全文をコピー</button>
+
+  <textarea id="output" readonly placeholder="ここにファイルの全文が表示されます"></textarea>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const output = document.getElementById("output");
+    const copyButton = document.getElementById("copyButton");
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+
+      if (!file) {
+        output.value = "";
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        output.value = reader.result;
+      };
+
+      reader.onerror = () => {
+        output.value = "ファイルを読み込めませんでした。";
+      };
+
+      reader.readAsText(file);
+    });
+
+    copyButton.addEventListener("click", async () => {
+      const text = output.value;
+
+      if (!text) {
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(text);
+        copyButton.textContent = "コピーしました！";
+
+        setTimeout(() => {
+          copyButton.textContent = "全文をコピー";
+        }, 1500);
+      } catch (error) {
+        output.focus();
+        output.select();
+        document.execCommand("copy");
+        window.getSelection().removeAllRanges();
+
+        copyButton.textContent = "コピーしました！";
+
+        setTimeout(() => {
+          copyButton.textContent = "全文をコピー";
+        }, 1500);
+      }
+    });
+  </script>
+
+</body>
+</html>
