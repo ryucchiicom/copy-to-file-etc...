@@ -23,12 +23,12 @@
     }
 
     button {
-      padding: 10px 14px;
+      padding: 10px 18px;
       border: 1px solid GrayText;
       border-radius: 10px;
       background: Canvas;
       color: CanvasText;
-      font-size: 14px;
+      font-size: 15px;
       cursor: pointer;
     }
 
@@ -50,17 +50,61 @@
     accept=".txt,.html,.htm,.css,.js,.json,.xml,.csv,.md,.log,text/plain,text/html"
   >
 
-  <button id="fileToClipboard">TXT… → clipboard</button>
-  <button id="clipboardToFile">clipboard → TXT</button>
+  <button id="uploadButton">TXT… → clipboard</button>
+  <button id="fileButton">clipboard → TXT</button>
 
   <script>
     const fileInput = document.getElementById("fileInput");
-    const fileToClipboard = document.getElementById("fileToClipboard");
-    const clipboardToFile = document.getElementById("clipboardToFile");
+    const uploadButton = document.getElementById("uploadButton");
+    const fileButton = document.getElementById("fileButton");
 
-    fileToClipboard.addEventListener("click", () => {
+    function resetUploadButton() {
+      setTimeout(() => {
+        uploadButton.textContent = "TXT… → clipboard";
+      }, 1500);
+    }
+
+    function resetFileButton() {
+      setTimeout(() => {
+        fileButton.textContent = "clipboard → TXT";
+      }, 1500);
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (error) {
+        const textarea = document.createElement("textarea");
+
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+
+        let success = false;
+
+        try {
+          success = document.execCommand("copy");
+        } catch (e) {
+          success = false;
+        }
+
+        textarea.remove();
+
+        return success;
+      }
+    }
+
+    async function uploadFile() {
+      fileInput.value = "";
       fileInput.click();
-    });
+    }
+
+    uploadButton.addEventListener("click", uploadFile);
 
     fileInput.addEventListener("change", () => {
       const file = fileInput.files[0];
@@ -72,88 +116,50 @@
       const reader = new FileReader();
 
       reader.onload = async () => {
-        const text = reader.result;
+        const success = await copyText(reader.result);
 
-        try {
-          await navigator.clipboard.writeText(text);
-
-          fileToClipboard.textContent = "コピーしました！";
-
-          setTimeout(() => {
-            fileToClipboard.textContent = "TXT… → clipboard";
-          }, 1500);
-
-        } catch (error) {
-          const textarea = document.createElement("textarea");
-
-          textarea.value = text;
-          textarea.style.position = "fixed";
-          textarea.style.opacity = "0";
-
-          document.body.appendChild(textarea);
-          textarea.focus();
-          textarea.select();
-
-          try {
-            document.execCommand("copy");
-          } catch (e) {
-          }
-
-          textarea.remove();
-
-          fileToClipboard.textContent = "コピーしました！";
-
-          setTimeout(() => {
-            fileToClipboard.textContent = "TXT… → clipboard";
-          }, 1500);
+        if (success) {
+          uploadButton.textContent = "copied!";
+        } else {
+          uploadButton.textContent = "copy failed";
         }
+
+        resetUploadButton();
       };
 
       reader.readAsText(file);
-
-      fileInput.value = "";
     });
 
-    clipboardToFile.addEventListener("click", async () => {
+    fileButton.addEventListener("click", async () => {
       try {
         const text = await navigator.clipboard.readText();
-
-        if (!text) {
-          clipboardToFile.textContent = "空です";
-
-          setTimeout(() => {
-            clipboardToFile.textContent = "clipboard → TXT";
-          }, 1500);
-
-          return;
-        }
 
         const blob = new Blob([text], {
           type: "text/plain;charset=utf-8"
         });
 
         const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
+        const link = document.createElement("a");
 
-        a.href = url;
-        a.download = "clipboard.txt";
-        a.click();
+        link.href = url;
+        link.download = "clipboard.txt";
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
 
         URL.revokeObjectURL(url);
 
-        clipboardToFile.textContent = "保存しました！";
-
-        setTimeout(() => {
-          clipboardToFile.textContent = "clipboard → TXT";
-        }, 1500);
-
+        fileButton.textContent = "filed!";
       } catch (error) {
-        clipboardToFile.textContent = "取得できませんでした";
-
-        setTimeout(() => {
-          clipboardToFile.textContent = "clipboard → TXT";
-        }, 1500);
+        fileButton.textContent = "failed!";
       }
+
+      resetFileButton();
+    });
+
+    window.addEventListener("load", () => {
+      fileInput.click();
     });
   </script>
 
