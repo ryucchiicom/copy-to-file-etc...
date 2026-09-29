@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>テキスト変換</title>
+  <title>TXT ↔ Clipboard</title>
 
   <style>
     :root {
@@ -16,25 +16,19 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 10px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: Canvas;
       color: CanvasText;
     }
 
-    #container {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      align-items: center;
-    }
-
     button {
-      padding: 10px 18px;
+      padding: 10px 14px;
       border: 1px solid GrayText;
       border-radius: 10px;
       background: Canvas;
       color: CanvasText;
-      font-size: 15px;
+      font-size: 14px;
       cursor: pointer;
     }
 
@@ -50,29 +44,21 @@
 
 <body>
 
-  <div id="container">
-    <input
-      type="file"
-      id="fileInput"
-      accept=".txt,.html,.htm,.css,.js,.json,.xml,.csv,.md,.log,text/plain,text/html"
-    >
+  <input
+    type="file"
+    id="fileInput"
+    accept=".txt,.html,.htm,.css,.js,.json,.xml,.csv,.md,.log,text/plain,text/html"
+  >
 
-    <button id="uploadButton">再アップロード</button>
-
-    <button id="saveButton">クリップボード → TXT</button>
-  </div>
+  <button id="fileToClipboard">TXT… → clipboard</button>
+  <button id="clipboardToFile">clipboard → TXT</button>
 
   <script>
     const fileInput = document.getElementById("fileInput");
-    const uploadButton = document.getElementById("uploadButton");
-    const saveButton = document.getElementById("saveButton");
+    const fileToClipboard = document.getElementById("fileToClipboard");
+    const clipboardToFile = document.getElementById("clipboardToFile");
 
-    window.addEventListener("load", () => {
-      fileInput.click();
-    });
-
-    uploadButton.addEventListener("click", () => {
-      fileInput.value = "";
+    fileToClipboard.addEventListener("click", () => {
       fileInput.click();
     });
 
@@ -91,11 +77,12 @@
         try {
           await navigator.clipboard.writeText(text);
 
-          uploadButton.textContent = "コピーしました！";
+          fileToClipboard.textContent = "コピーしました！";
 
           setTimeout(() => {
-            uploadButton.textContent = "再アップロード";
+            fileToClipboard.textContent = "TXT… → clipboard";
           }, 1500);
+
         } catch (error) {
           const textarea = document.createElement("textarea");
 
@@ -114,53 +101,28 @@
 
           textarea.remove();
 
-          uploadButton.textContent = "コピーしました！";
+          fileToClipboard.textContent = "コピーしました！";
 
           setTimeout(() => {
-            uploadButton.textContent = "再アップロード";
+            fileToClipboard.textContent = "TXT… → clipboard";
           }, 1500);
         }
       };
 
       reader.readAsText(file);
+
+      fileInput.value = "";
     });
 
-    saveButton.addEventListener("click", async () => {
+    clipboardToFile.addEventListener("click", async () => {
       try {
         const text = await navigator.clipboard.readText();
 
         if (!text) {
-          saveButton.textContent = "クリップボードが空です";
+          clipboardToFile.textContent = "空です";
 
           setTimeout(() => {
-            saveButton.textContent = "クリップボード → TXT";
-          }, 1500);
-
-          return;
-        }
-
-        if ("showSaveFilePicker" in window) {
-          const handle = await window.showSaveFilePicker({
-            suggestedName: "clipboard.txt",
-            types: [
-              {
-                description: "テキストファイル",
-                accept: {
-                  "text/plain": [".txt"]
-                }
-              }
-            ]
-          });
-
-          const writable = await handle.createWritable();
-
-          await writable.write(text);
-          await writable.close();
-
-          saveButton.textContent = "保存しました！";
-
-          setTimeout(() => {
-            saveButton.textContent = "クリップボード → TXT";
+            clipboardToFile.textContent = "clipboard → TXT";
           }, 1500);
 
           return;
@@ -179,21 +141,17 @@
 
         URL.revokeObjectURL(url);
 
-        saveButton.textContent = "保存しました！";
+        clipboardToFile.textContent = "保存しました！";
 
         setTimeout(() => {
-          saveButton.textContent = "クリップボード → TXT";
+          clipboardToFile.textContent = "clipboard → TXT";
         }, 1500);
 
       } catch (error) {
-        if (error.name === "AbortError") {
-          return;
-        }
-
-        saveButton.textContent = "取得できませんでした";
+        clipboardToFile.textContent = "取得できませんでした";
 
         setTimeout(() => {
-          saveButton.textContent = "クリップボード → TXT";
+          clipboardToFile.textContent = "clipboard → TXT";
         }, 1500);
       }
     });
