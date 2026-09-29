@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TXT/HTML コピー</title>
+  <title>テキスト変換</title>
 
   <style>
     :root {
@@ -21,7 +21,14 @@
       color: CanvasText;
     }
 
-    #uploadButton {
+    #container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+
+    button {
       padding: 10px 18px;
       border: 1px solid GrayText;
       border-radius: 10px;
@@ -31,7 +38,7 @@
       cursor: pointer;
     }
 
-    #uploadButton:active {
+    button:active {
       opacity: 0.6;
     }
 
@@ -43,23 +50,29 @@
 
 <body>
 
-  <input
-    type="file"
-    id="fileInput"
-    accept=".txt,.html,.htm,.css,.js,.json,.xml,.csv,.md,.log,text/plain,text/html"
-  >
+  <div id="container">
+    <input
+      type="file"
+      id="fileInput"
+      accept=".txt,.html,.htm,.css,.js,.json,.xml,.csv,.md,.log,text/plain,text/html"
+    >
 
-  <button id="uploadButton">再アップロード</button>
+    <button id="uploadButton">再アップロード</button>
+
+    <button id="saveButton">クリップボード → TXT</button>
+  </div>
 
   <script>
     const fileInput = document.getElementById("fileInput");
     const uploadButton = document.getElementById("uploadButton");
+    const saveButton = document.getElementById("saveButton");
 
     window.addEventListener("load", () => {
       fileInput.click();
     });
 
     uploadButton.addEventListener("click", () => {
+      fileInput.value = "";
       fileInput.click();
     });
 
@@ -77,6 +90,7 @@
 
         try {
           await navigator.clipboard.writeText(text);
+
           uploadButton.textContent = "コピーしました！";
 
           setTimeout(() => {
@@ -109,6 +123,79 @@
       };
 
       reader.readAsText(file);
+    });
+
+    saveButton.addEventListener("click", async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+
+        if (!text) {
+          saveButton.textContent = "クリップボードが空です";
+
+          setTimeout(() => {
+            saveButton.textContent = "クリップボード → TXT";
+          }, 1500);
+
+          return;
+        }
+
+        if ("showSaveFilePicker" in window) {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: "clipboard.txt",
+            types: [
+              {
+                description: "テキストファイル",
+                accept: {
+                  "text/plain": [".txt"]
+                }
+              }
+            ]
+          });
+
+          const writable = await handle.createWritable();
+
+          await writable.write(text);
+          await writable.close();
+
+          saveButton.textContent = "保存しました！";
+
+          setTimeout(() => {
+            saveButton.textContent = "クリップボード → TXT";
+          }, 1500);
+
+          return;
+        }
+
+        const blob = new Blob([text], {
+          type: "text/plain;charset=utf-8"
+        });
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+
+        a.href = url;
+        a.download = "clipboard.txt";
+        a.click();
+
+        URL.revokeObjectURL(url);
+
+        saveButton.textContent = "保存しました！";
+
+        setTimeout(() => {
+          saveButton.textContent = "クリップボード → TXT";
+        }, 1500);
+
+      } catch (error) {
+        if (error.name === "AbortError") {
+          return;
+        }
+
+        saveButton.textContent = "取得できませんでした";
+
+        setTimeout(() => {
+          saveButton.textContent = "クリップボード → TXT";
+        }, 1500);
+      }
     });
   </script>
 
