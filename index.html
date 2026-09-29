@@ -16,13 +16,19 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: Canvas;
       color: CanvasText;
     }
 
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
     button {
+      width: 180px;
       padding: 10px 18px;
       border: 1px solid GrayText;
       border-radius: 10px;
@@ -44,67 +50,29 @@
 
 <body>
 
+  <div class="buttons">
+    <button id="uploadButton">TXT… → clipboard</button>
+    <button id="fileButton">clipboard → TXT</button>
+  </div>
+
   <input
     type="file"
     id="fileInput"
     accept=".txt,.html,.htm,.css,.js,.json,.xml,.csv,.md,.log,text/plain,text/html"
   >
 
-  <button id="uploadButton">TXT… → clipboard</button>
-  <button id="fileButton">clipboard → TXT</button>
-
   <script>
     const fileInput = document.getElementById("fileInput");
     const uploadButton = document.getElementById("uploadButton");
     const fileButton = document.getElementById("fileButton");
 
-    function resetUploadButton() {
-      setTimeout(() => {
-        uploadButton.textContent = "TXT… → clipboard";
-      }, 1500);
-    }
-
-    function resetFileButton() {
-      setTimeout(() => {
-        fileButton.textContent = "clipboard → TXT";
-      }, 1500);
-    }
-
-    async function copyText(text) {
-      try {
-        await navigator.clipboard.writeText(text);
-        return true;
-      } catch (error) {
-        const textarea = document.createElement("textarea");
-
-        textarea.value = text;
-        textarea.style.position = "fixed";
-        textarea.style.opacity = "0";
-
-        document.body.appendChild(textarea);
-        textarea.focus();
-        textarea.select();
-
-        let success = false;
-
-        try {
-          success = document.execCommand("copy");
-        } catch (e) {
-          success = false;
-        }
-
-        textarea.remove();
-
-        return success;
-      }
-    }
-
-    async function uploadFile() {
-      fileInput.value = "";
+    window.addEventListener("load", () => {
       fileInput.click();
-    }
+    });
 
-    uploadButton.addEventListener("click", uploadFile);
+    uploadButton.addEventListener("click", () => {
+      fileInput.click();
+    });
 
     fileInput.addEventListener("change", () => {
       const file = fileInput.files[0];
@@ -116,18 +84,44 @@
       const reader = new FileReader();
 
       reader.onload = async () => {
-        const success = await copyText(reader.result);
+        const text = reader.result;
 
-        if (success) {
+        try {
+          await navigator.clipboard.writeText(text);
           uploadButton.textContent = "copied!";
-        } else {
-          uploadButton.textContent = "copy failed";
-        }
 
-        resetUploadButton();
+          setTimeout(() => {
+            uploadButton.textContent = "TXT… → clipboard";
+          }, 1500);
+        } catch (error) {
+          const textarea = document.createElement("textarea");
+
+          textarea.value = text;
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+
+          document.body.appendChild(textarea);
+          textarea.focus();
+          textarea.select();
+
+          try {
+            document.execCommand("copy");
+            uploadButton.textContent = "copied!";
+          } catch (e) {
+            uploadButton.textContent = "copy failed";
+          }
+
+          textarea.remove();
+
+          setTimeout(() => {
+            uploadButton.textContent = "TXT… → clipboard";
+          }, 1500);
+        }
       };
 
       reader.readAsText(file);
+
+      fileInput.value = "";
     });
 
     fileButton.addEventListener("click", async () => {
@@ -151,15 +145,17 @@
         URL.revokeObjectURL(url);
 
         fileButton.textContent = "filed!";
+
+        setTimeout(() => {
+          fileButton.textContent = "clipboard → TXT";
+        }, 1500);
       } catch (error) {
-        fileButton.textContent = "failed!";
+        fileButton.textContent = "failed";
+
+        setTimeout(() => {
+          fileButton.textContent = "clipboard → TXT";
+        }, 1500);
       }
-
-      resetFileButton();
-    });
-
-    window.addEventListener("load", () => {
-      fileInput.click();
     });
   </script>
 
