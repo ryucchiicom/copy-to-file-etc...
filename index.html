@@ -25,6 +25,7 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+      align-items: center;
     }
 
     button {
@@ -45,6 +46,50 @@
     #fileInput {
       display: none;
     }
+
+    #filenameArea {
+      display: none;
+      align-items: center;
+      gap: 0;
+      height: 38px;
+    }
+
+    #filename,
+    #extension {
+      box-sizing: border-box;
+      height: 38px;
+      border: 1px solid GrayText;
+      background: Canvas;
+      color: CanvasText;
+      font-size: 15px;
+      outline: none;
+    }
+
+    #filename {
+      width: 120px;
+      padding: 0 8px;
+      border-radius: 10px 0 0 10px;
+      border-right: none;
+    }
+
+    #extension {
+      width: 55px;
+      padding: 0 8px;
+      border-radius: 0 10px 10px 0;
+      border-left: none;
+    }
+
+    #dot {
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-top: 1px solid GrayText;
+      border-bottom: 1px solid GrayText;
+      background: Canvas;
+      color: CanvasText;
+      font-size: 15px;
+    }
   </style>
 </head>
 
@@ -52,7 +97,25 @@
 
   <div class="buttons">
     <button id="uploadButton">TXT… → clipboard</button>
+
     <button id="fileButton">clipboard → TXT</button>
+
+    <div id="filenameArea">
+      <input
+        type="text"
+        id="filename"
+        autocomplete="off"
+        spellcheck="false"
+      >
+      <span id="dot">.</span>
+      <input
+        type="text"
+        id="extension"
+        value="txt"
+        autocomplete="off"
+        spellcheck="false"
+      >
+    </div>
   </div>
 
   <input
@@ -65,6 +128,11 @@
     const fileInput = document.getElementById("fileInput");
     const uploadButton = document.getElementById("uploadButton");
     const fileButton = document.getElementById("fileButton");
+    const filenameArea = document.getElementById("filenameArea");
+    const filename = document.getElementById("filename");
+    const extension = document.getElementById("extension");
+
+    let clipboardText = "";
 
     window.addEventListener("load", () => {
       fileInput.click();
@@ -120,15 +188,49 @@
       };
 
       reader.readAsText(file);
-
       fileInput.value = "";
     });
 
     fileButton.addEventListener("click", async () => {
       try {
-        const text = await navigator.clipboard.readText();
+        clipboardText = await navigator.clipboard.readText();
 
-        const blob = new Blob([text], {
+        filename.value = "";
+        extension.value = "txt";
+
+        fileButton.style.display = "none";
+        filenameArea.style.display = "flex";
+
+        filename.focus();
+      } catch (error) {
+        fileButton.textContent = "failed";
+
+        setTimeout(() => {
+          fileButton.textContent = "clipboard → TXT";
+        }, 1500);
+      }
+    });
+
+    filename.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        extension.focus();
+        extension.select();
+      }
+    });
+
+    extension.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+
+        const name = filename.value.trim();
+        const ext = extension.value.trim();
+
+        if (!name || !ext) {
+          return;
+        }
+
+        const blob = new Blob([clipboardText], {
           type: "text/plain;charset=utf-8"
         });
 
@@ -136,7 +238,7 @@
         const link = document.createElement("a");
 
         link.href = url;
-        link.download = "clipboard.txt";
+        link.download = name + "." + ext;
 
         document.body.appendChild(link);
         link.click();
@@ -144,13 +246,9 @@
 
         URL.revokeObjectURL(url);
 
+        filenameArea.style.display = "none";
+        fileButton.style.display = "block";
         fileButton.textContent = "filed!";
-
-        setTimeout(() => {
-          fileButton.textContent = "clipboard → TXT";
-        }, 1500);
-      } catch (error) {
-        fileButton.textContent = "failed";
 
         setTimeout(() => {
           fileButton.textContent = "clipboard → TXT";
